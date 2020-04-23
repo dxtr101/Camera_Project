@@ -34,12 +34,17 @@ def main():
 
     # Configuration
     plt.ion()
-    bkg_update_period = 6000 # seconds between background updates
-    motion_threshold = 370   # Min histogram value that indicates movement
-    motion = False           # Initially, no motion detected.
-    file_counter = 0         # File sequence
-    frame_counter = 0        # Number of frames saved to specific file
-    frame_limit = 10000      # NUmber of frames allowed per file
+    bkg_update_period = 6000  # seconds between background updates
+    motion_threshold = 390    # Min histogram value that indicates movement
+    motion = False            # Initially, no motion detected.
+    file_counter = 0          # File sequence
+    frame_counter = 0         # Number of frames saved to specific file
+    motion_stop_time = 0      # Track when motion ended
+    motion_last_frame = False # Need two frames in a row to call motion true
+    motion_record_hold = 3    # Seconds to continue recording after motion stops
+    frame_limit = 10000       # NUmber of frames allowed per file
+    motion_print = 60         # Print if motion only every (x) seconds
+    last_print = 0            # last time motion printed
     time.sleep(1)
 
     # Get Background Frame
@@ -82,9 +87,17 @@ def main():
         # Determine if Motion Detected
         hist_mask_max = np.amax(hist_mask)
         if hist_mask_max > motion_threshold:
+            motion_this_frame = True
+        else:
+            motion_this_frame = False
+            motion_stop_time = time.time()
+
+        if motion_last_frame and motion_this_frame:
             motion = True
         else:
             motion = False
+
+        motion_last_frame = motion_this_frame
 
         # Plot Histogram
         # plt.clf()
@@ -94,16 +107,16 @@ def main():
         # plt.pause(0.001)
 
         # Display Image
-        cv.imshow('Video', frame)
-        cv.imshow('Mask', fgMask)
-        if cv.waitKey(1) == ord('q'):
-            break
+        # cv.imshow('Video', frame)
+        # cv.imshow('Mask', fgMask)
+        # if cv.waitKey(1) == ord('q'):
+        #     break
 
         # Update Background
         if (loop_time - bkg_time) > bkg_update_period:
             bkg_time = bkg_frame(video)
 
-        if motion:
+        if motion or ((loop_time - motion_stop_time) < motion_record_hold):
             # Add Time Stamp
             cv.rectangle(frame, (10, 2), (240, 20), (255, 255, 255), -1)
             cv.putText(frame, str(time.asctime()), (15, 15),
@@ -119,6 +132,9 @@ def main():
                     output_path = join('/media/lair_drive/Security_Footage', output_file)
                     out = cv.VideoWriter(output_path, fourcc, 20, (640, 480))
                 frame_counter = 0
+
+            if (loop_time - last_print) > motion_print:
+                print('Detected Motion.', time.asctime())
             out.write(frame)
 
     # Release capture
