@@ -1,9 +1,11 @@
 from __future__ import print_function
 from matplotlib import pyplot as plt
+from os.path import join
 import cv2 as cv
 import numpy as np
 import argparse
 import time
+import sys
 
 def bkg_frame(vid):
     '''
@@ -45,7 +47,12 @@ def main():
 
     # Save File Information
     fourcc = cv.VideoWriter_fourcc(*'XVID')
-    out = cv.VideoWriter('output_' + str(file_counter) + '.avi', fourcc, 20, (640, 480))
+    if sys.platform == 'win32':
+        out = cv.VideoWriter('output_' + str(file_counter) + '.avi', fourcc, 20, (640, 480))
+    elif sys.platform == 'linux':
+        output_file = 'output_' + str(file_counter) + '.avi'
+        output_path = join('/media/lair_drive/Security_Footage', output_file)
+        out = cv.VideoWriter(output_path, fourcc, 20, (640, 480))
 
     # Parser (Detect Differences From Background)
     parser = argparse.ArgumentParser(description='This program detections motion via background subtraction.')
@@ -105,7 +112,12 @@ def main():
             frame_counter += 1
             if frame_counter >= frame_limit:
                 file_counter += 1
-                out = cv.VideoWriter('output_' + str(file_counter) + '.avi', fourcc, 20, (640, 480))
+                if sys.platform == 'win32':
+                    out = cv.VideoWriter('output_' + str(file_counter) + '.avi', fourcc, 20, (640, 480))
+                elif sys.platform == 'linux':
+                    output_file = 'output_' + str(file_counter) + '.avi'
+                    output_path = join('/media/lair_drive/Security_Footage', output_file)
+                    out = cv.VideoWriter(output_path, fourcc, 20, (640, 480))
                 frame_counter = 0
             out.write(frame)
 
