@@ -35,6 +35,9 @@ def main():
     bkg_update_period = 6000 # seconds between background updates
     motion_threshold = 370   # Min histogram value that indicates movement
     motion = False           # Initially, no motion detected.
+    file_counter = 0         # File sequence
+    frame_counter = 0        # Number of frames saved to specific file
+    frame_limit = 10000      # NUmber of frames allowed per file
     time.sleep(1)
 
     # Get Background Frame
@@ -42,7 +45,7 @@ def main():
 
     # Save File Information
     fourcc = cv.VideoWriter_fourcc(*'XVID')
-    out = cv.VideoWriter('output.avi', fourcc, 20, (640, 480))
+    out = cv.VideoWriter('output_' + str(file_counter) + '.avi', fourcc, 20, (640, 480))
 
     # Parser (Detect Differences From Background)
     parser = argparse.ArgumentParser(description='This program detections motion via background subtraction.')
@@ -99,6 +102,11 @@ def main():
             cv.putText(frame, str(time.asctime()), (15, 15),
                        cv.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0))
             # Write Frame to File
+            frame_counter += 1
+            if frame_counter >= frame_limit:
+                file_counter += 1
+                out = cv.VideoWriter('output_' + str(file_counter) + '.avi', fourcc, 20, (640, 480))
+                frame_counter = 0
             out.write(frame)
 
     # Release capture
